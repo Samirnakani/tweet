@@ -1,0 +1,422 @@
+{% extends "tweets/base.html" %}
+{% load static %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="bg-gray-800/80 backdrop-blur-sm rounded-lg p-6 mb-8 shadow-xl">
+  <h2 class="text-3xl font-bold text-white mb-4">Tweets</h2>
+  <div class="h-px bg-gradient-to-r from-gray-600 to-transparent mb-6"></div>
+  <a href="{% url 'tweet_create' %}" 
+     class="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105">
+    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    </svg>
+    Create New Tweet
+  </a>
+</div>
+
+<!-- Tweets Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {% for tweet in tweets %}
+  <!-- ✅ Added click handler and cursor-pointer -->
+  <div class="bg-gray-800/70 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-700/50 cursor-pointer tweet-card" 
+       onclick="openTweetPopup({{ tweet.id }})">
+    <div class="p-6">
+      
+      <!-- User Info -->
+      <div class="flex items-center mb-4">
+        {% if tweet.user.pic %}
+          <img src="{{ tweet.user.pic.url }}" 
+               class="w-12 h-12 rounded-full object-cover ring-2 ring-yellow-400/50 mr-3 shadow-md" 
+               alt="{{ tweet.user.uname }}">
+        {% else %}
+          <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mr-3 shadow-md">
+            <span class="text-gray-900 font-bold text-lg">{{ tweet.user.uname|first|upper }}</span>
+          </div>
+        {% endif %}
+        
+        <div>
+          <h5 class="text-lg font-semibold text-white">{{ tweet.user.uname }}</h5>
+          <p class="text-gray-400 text-sm">{{ tweet.created_at|date:"M d, Y H:i" }}</p>
+        </div>
+      </div>
+
+      <!-- Tweet Content -->
+      <div class="mb-4">
+        <p class="text-gray-200 text-base leading-relaxed">{{ tweet.content }}</p>
+      </div>
+
+      <!-- Tweet Image -->
+      {% if tweet.image %}
+        <div class="mb-4">
+          <img src="{{ tweet.image.url }}" 
+               class="w-full h-48 object-cover rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200" 
+               alt="Tweet Image">
+        </div>
+      {% endif %}
+
+      <!-- Action Buttons -->
+      {% if uname == tweet.user.uname %}
+        <!-- ✅ Added stopPropagation to prevent popup when clicking buttons -->
+        <div class="flex space-x-3 pt-4 border-t border-gray-700/50">
+          <a href="{% url 'tweet_edit' tweet.id %}" 
+             onclick="event.stopPropagation()"
+             class="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 hover:shadow-md">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            Edit
+          </a>
+          
+          <a href="{% url 'tweet_delete' tweet.id %}" 
+             onclick="event.stopPropagation()"
+             class="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 hover:shadow-md">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            Delete
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  
+  <!-- Empty State -->
+  <div class="col-span-full flex flex-col items-center justify-center py-16">
+    <div class="bg-gray-800/50 rounded-full p-6 mb-4">
+      <svg class="w-16 h-16 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 8h10m0 0V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2m10 0v10a2 2 0 01-2 2H9a2 2 0 01-2-2V8m0 0V6a2 2 0 012-2h6a2 2 0 012 2v2"/>
+      </svg>
+    </div>
+    <h3 class="text-xl font-semibold text-gray-300 mb-2">No tweets available</h3>
+    <p class="text-gray-500 text-center max-w-md">Be the first to share your thoughts! Click the "Create New Tweet" button to get started.</p>
+  </div>
+  
+  {% endfor %}
+</div>
+
+<!-- ✅ Tweet Popup Modal -->
+<div id="tweetModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div class="bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700/50">
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between p-6 border-b border-gray-700/50">
+      <h3 class="text-2xl font-bold text-white">Tweet Details</h3>
+      <button onclick="closeTweetPopup()" class="text-gray-400 hover:text-white transition-colors duration-200">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Modal Content -->
+    <div id="modalContent" class="p-6">
+      <!-- Loading spinner -->
+      <div id="loadingSpinner" class="flex items-center justify-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+        <span class="ml-3 text-gray-300">Loading tweet...</span>
+      </div>
+      
+      <!-- Tweet content will be loaded here -->
+      <div id="tweetContent" class="hidden">
+        <!-- User Info -->
+        <div class="flex items-center mb-6">
+          <div id="userAvatar" class="mr-4">
+            <!-- Avatar will be inserted here -->
+          </div>
+          <div>
+            <h4 id="userName" class="text-xl font-bold text-white"></h4>
+            <p id="userEmail" class="text-gray-400 text-sm"></p>
+            <p id="tweetDate" class="text-gray-500 text-sm"></p>
+          </div>
+        </div>
+
+        <!-- Tweet Text -->
+        <div class="mb-6">
+          <p id="tweetText" class="text-gray-200 text-lg leading-relaxed"></p>
+        </div>
+
+        <!-- Tweet Image with Zoom -->
+        <div id="tweetImageContainer" class="mb-6 hidden">
+          <div class="relative overflow-hidden rounded-lg bg-gray-900">
+            <img id="tweetImage" class="w-full rounded-lg shadow-lg cursor-zoom-in transition-transform duration-200 ease-out" alt="Tweet Image" style="transform-origin: center center;">
+            <div class="absolute top-2 right-2 text-white bg-black/50 rounded-full p-1 text-xs hidden" id="zoomIndicator">
+              📱 Pinch to zoom
+            </div>
+          </div>
+        </div>
+
+        <!-- Tweet Stats -->
+        <div class="border-t border-gray-700/50 pt-4">
+          <div class="flex items-center text-sm text-gray-500">
+            <span id="createdTime" class="mr-4"></span>
+            <span id="updatedTime" class="hidden"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ✅ Tweet Popup JavaScript with Image Zoom
+let currentScale = 1;
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+let translateX = 0;
+let translateY = 0;
+
+function openTweetPopup(tweetId) {
+    const modal = document.getElementById('tweetModal');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const tweetContent = document.getElementById('tweetContent');
+    
+    // Reset zoom state
+    resetImageZoom();
+    
+    // Show modal and loading state
+    modal.classList.remove('hidden');
+    loadingSpinner.classList.remove('hidden');
+    tweetContent.classList.add('hidden');
+    
+    // Fetch tweet details
+    fetch(`/tweet/${tweetId}/detail/`)
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading spinner
+            loadingSpinner.classList.add('hidden');
+            
+            // Populate content
+            populateTweetModal(data);
+            
+            // Show content
+            tweetContent.classList.remove('hidden');
+        })
+        .catch(error => {
+            console.error('Error fetching tweet:', error);
+            loadingSpinner.innerHTML = '<p class="text-red-400">Error loading tweet. Please try again.</p>';
+        });
+}
+
+function populateTweetModal(tweet) {
+    // User info
+    document.getElementById('userName').textContent = tweet.user_name;
+    document.getElementById('userEmail').textContent = tweet.user_email;
+    document.getElementById('tweetDate').textContent = tweet.created_at;
+    
+    // User avatar
+    const avatarContainer = document.getElementById('userAvatar');
+    if (tweet.user_pic) {
+        avatarContainer.innerHTML = `<img src="${tweet.user_pic}" class="w-16 h-16 rounded-full object-cover ring-2 ring-yellow-400/50 shadow-md" alt="${tweet.user_name}">`;
+    } else {
+        avatarContainer.innerHTML = `<div class="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-md">
+            <span class="text-gray-900 font-bold text-xl">${tweet.user_name.charAt(0).toUpperCase()}</span>
+        </div>`;
+    }
+    
+    // Tweet content
+    document.getElementById('tweetText').textContent = tweet.content;
+    
+    // Tweet image with zoom functionality
+    const imageContainer = document.getElementById('tweetImageContainer');
+    const image = document.getElementById('tweetImage');
+    if (tweet.image_url) {
+        image.src = tweet.image_url;
+        imageContainer.classList.remove('hidden');
+        
+        // Initialize zoom functionality
+        initializeImageZoom(image);
+    } else {
+        imageContainer.classList.add('hidden');
+    }
+    
+    // Timestamps
+    document.getElementById('createdTime').textContent = `Created: ${tweet.created_at}`;
+    if (tweet.updated_at) {
+        const updatedTime = document.getElementById('updatedTime');
+        updatedTime.textContent = `Updated: ${tweet.updated_at}`;
+        updatedTime.classList.remove('hidden');
+    }
+}
+
+function initializeImageZoom(image) {
+    let hammer;
+    
+    // Check if HammerJS is available, if not, use fallback
+    if (typeof Hammer !== 'undefined') {
+        // Use HammerJS for better touch support
+        hammer = new Hammer(image);
+        hammer.get('pinch').set({ enable: true });
+        hammer.get('pan').set({ enable: true });
+        
+        hammer.on('pinchstart pinchend pinchmove', handlePinch);
+        hammer.on('panstart panend panmove', handlePan);
+    } else {
+        // Fallback for mouse/basic touch
+        image.addEventListener('wheel', handleWheel, { passive: false });
+        image.addEventListener('mousedown', handleMouseDown);
+        image.addEventListener('touchstart', handleTouchStart, { passive: false });
+    }
+    
+    // Double-tap to reset
+    image.addEventListener('dblclick', resetImageZoom);
+    
+    // Show zoom indicator on mobile
+    if (isMobileDevice()) {
+        document.getElementById('zoomIndicator').classList.remove('hidden');
+        setTimeout(() => {
+            document.getElementById('zoomIndicator').classList.add('hidden');
+        }, 3000);
+    }
+}
+
+function handleWheel(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    applyZoom(delta, e.offsetX, e.offsetY);
+}
+
+function handlePinch(e) {
+    e.preventDefault();
+    if (e.type === 'pinchstart') {
+        currentScale = currentScale || 1;
+    } else if (e.type === 'pinchmove') {
+        const scale = currentScale * e.scale;
+        applyZoom(scale / currentScale, e.center.x, e.center.y);
+        currentScale = scale;
+    }
+}
+
+function handlePan(e) {
+    if (currentScale > 1) {
+        if (e.type === 'panstart') {
+            isDragging = true;
+        } else if (e.type === 'panmove' && isDragging) {
+            translateX += e.deltaX;
+            translateY += e.deltaY;
+            updateImageTransform();
+        } else if (e.type === 'panend') {
+            isDragging = false;
+        }
+    }
+}
+
+function handleMouseDown(e) {
+    if (currentScale > 1) {
+        isDragging = true;
+        startX = e.clientX - translateX;
+        startY = e.clientY - translateY;
+        
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    }
+}
+
+function handleMouseMove(e) {
+    if (isDragging) {
+        translateX = e.clientX - startX;
+        translateY = e.clientY - startY;
+        updateImageTransform();
+    }
+}
+
+function handleMouseUp() {
+    isDragging = false;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+}
+
+function handleTouchStart(e) {
+    if (e.touches.length === 1 && currentScale > 1) {
+        isDragging = true;
+        startX = e.touches[0].clientX - translateX;
+        startY = e.touches[0].clientY - translateY;
+        
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd);
+    }
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    if (isDragging && e.touches.length === 1) {
+        translateX = e.touches[0].clientX - startX;
+        translateY = e.touches[0].clientY - startY;
+        updateImageTransform();
+    }
+}
+
+function handleTouchEnd() {
+    isDragging = false;
+    document.removeEventListener('touchmove', handleTouchMove);
+    document.removeEventListener('touchend', handleTouchEnd);
+}
+
+function applyZoom(scaleDelta, originX, originY) {
+    const newScale = Math.min(Math.max(currentScale * scaleDelta, 1), 5);
+    
+    if (newScale !== currentScale) {
+        // Adjust translation to zoom towards the cursor/touch point
+        const scaleChange = newScale / currentScale;
+        translateX = originX - scaleChange * (originX - translateX);
+        translateY = originY - scaleChange * (originY - translateY);
+        
+        currentScale = newScale;
+        updateImageTransform();
+        
+        // Change cursor based on zoom level
+        const image = document.getElementById('tweetImage');
+        if (currentScale > 1) {
+            image.style.cursor = 'grab';
+        } else {
+            image.style.cursor = 'zoom-in';
+            translateX = 0;
+            translateY = 0;
+        }
+    }
+}
+
+function updateImageTransform() {
+    const image = document.getElementById('tweetImage');
+    image.style.transform = `scale(${currentScale}) translate(${translateX / currentScale}px, ${translateY / currentScale}px)`;
+}
+
+function resetImageZoom() {
+    currentScale = 1;
+    translateX = 0;
+    translateY = 0;
+    isDragging = false;
+    
+    const image = document.getElementById('tweetImage');
+    if (image) {
+        image.style.transform = 'scale(1) translate(0px, 0px)';
+        image.style.cursor = 'zoom-in';
+    }
+}
+
+function isMobileDevice() {
+    return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+           ('ontouchstart' in window);
+}
+
+function closeTweetPopup() {
+    resetImageZoom();
+    document.getElementById('tweetModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('tweetModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeTweetPopup();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeTweetPopup();
+    }
+});
+</script>
+{% endblock %}

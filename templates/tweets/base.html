@@ -1,0 +1,122 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}My Site{% endblock %}</title>
+  <style>
+    body {
+      background-image: url("{% static 'images/bg.jpg' %}");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'primary': '#f59e0b',
+            'dark-bg': '#1a1a1a',
+          }
+        }
+      }
+    }
+  </script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen bg-opacity-95">
+  
+  <!-- Navbar -->
+  <nav class="bg-gray-900/90 backdrop-blur-sm border-b border-gray-700 shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo -->
+        <a href="{% url 'home' %}" class="text-2xl font-bold text-yellow-400 hover:text-yellow-300 transition-colors duration-200">
+          MySite
+        </a>
+        
+        <!-- Mobile menu button -->
+        <div class="md:hidden">
+          <button id="mobile-menu-btn" class="text-gray-300 hover:text-white focus:outline-none focus:text-white">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex items-center space-x-6">
+          <a href="{% url 'home' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+            Home
+          </a>
+          
+          {% if uname and uname != "Guest" %}
+  <span class="text-green-400 px-3 py-2 text-sm font-medium">
+    Welcome, {{ uname }}!
+  </span>
+  <a href="{% url 'logout' %}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+    Logout
+  </a>
+{% else %}
+  <a href="{% url 'register' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+    Register
+  </a>
+  <a href="{% url 'login' %}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+    Login
+  </a>
+{% endif %}
+        </div>
+      </div>
+      
+      <!-- Mobile Navigation Menu -->
+      <div id="mobile-menu" class="md:hidden hidden border-t border-gray-700 pt-4 pb-4">
+        <div class="flex flex-col space-y-3">
+          <a href="{% url 'home' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+            Home
+          </a>
+          
+          {% if uname != "Guest" %}
+            <span class="text-green-400 px-3 py-2 text-sm font-medium">
+              Welcome, {{ uname }}!
+            </span>
+            <a href="{% url 'logout' %}" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 w-fit">
+              Logout
+            </a>
+          {% else %}
+            <a href="{% url 'register' %}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200">
+              Register
+            </a>
+            <a href="{% url 'login' %}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 w-fit">
+              Login
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Content goes here -->
+    {% block content %}{% endblock %}
+    
+    <!-- Demo content -->
+    
+  </main>
+
+  <!-- Mobile Menu Toggle Script -->
+  <script>
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+  </script>
+</body>
+</html>
